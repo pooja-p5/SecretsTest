@@ -18,10 +18,12 @@ jobs:
 
       - name: Install TruffleHog
         run: |
-          curl -sSL https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_$(uname -s)_$(uname -m).tar.gz -o trufflehog.tar.gz
+          VERSION=3.88.0
+          curl -sSL https://github.com/trufflesecurity/trufflehog/releases/download/v${VERSION}/trufflehog_${VERSION}_linux_amd64.tar.gz -o trufflehog.tar.gz
           tar -xvzf trufflehog.tar.gz
           chmod +x trufflehog
           sudo mv trufflehog /usr/local/bin/
+
 
       - name: Run TruffleHog (scan full history, JSON output)
         run: |
