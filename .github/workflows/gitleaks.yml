@@ -9,27 +9,20 @@ on:
 
 jobs:
   scan:
-    name: gitleaks
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # fetch full history
+          fetch-depth: 0   # needed for full history
 
-      - name: Install Gitleaks
-        run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-          chmod +x gitleaks
-          sudo mv gitleaks /usr/local/bin/
-
-      - name: Run Gitleaks (code + commit history)
-        run: |
-          gitleaks detect \
-            --source . \
-            --log-opts="--all" \
-            --report-format json \
-            --report-path gitleaks-report.json
+      - name: Run Gitleaks with JSON report
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        with:
+          # 👇 this works in v2 — but you must use "args" under with
+          args: detect --source . --log-opts="--all" --report-format json --report-path gitleaks-report.json
 
       - name: Upload JSON report as artifact
         uses: actions/upload-artifact@v4
