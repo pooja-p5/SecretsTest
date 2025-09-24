@@ -1,37 +1,38 @@
-name: trufflehog
+name: trufflehog-scan
 
 on:
   push:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 4 * * *" # daily at 4AM
 
 jobs:
-  scan:
+  trufflehog:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code (full history)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # important: get full commit history
+          fetch-depth: 0
 
       - name: Install TruffleHog
         run: |
-          curl -sSL https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_$(uname -s)_$(uname -m).tar.gz -o trufflehog.tar.gz
-          tar -xvzf trufflehog.tar.gz
+          curl -sSL https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_$(uname -s)_$(uname -m).zip -o trufflehog.zip
+          unzip trufflehog.zip
           chmod +x trufflehog
           sudo mv trufflehog /usr/local/bin/
 
-      - name: Run TruffleHog on code + history
+      - name: Run TruffleHog (scan full history, JSON output)
         run: |
           trufflehog git file://. \
             --json \
+            --no-update \
             --since-commit=HEAD \
             > trufflehog-report.json || true
 
-      - name: Upload JSON report as artifact
+      - name: Upload JSON report
         uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-report
+          name: trufflehog-results
           path: trufflehog-report.json
