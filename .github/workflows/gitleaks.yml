@@ -16,12 +16,16 @@ jobs:
         with:
           fetch-depth: 0   # important! fetch full history for commit scan
 
-      - name: Run Gitleaks (scan full history + current code)
+      - name: Run Gitleaks scan (code + commit history)
         uses: gitleaks/gitleaks-action@v2
         with:
-          args: detect --source . --log-opts="--all" --report-format json --report-path gitleaks.json
+          args: detect --source . --log-opts="--all" --report-format json --report-path gitleaks-report.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-      - name: Upload SARIF report to GitHub Security tab
-        uses: github/codeql-action/upload-json@v4
+      - name: Upload JSON report as artifact
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: gitleaks.json
+          name: gitleaks-report
+          path: gitleaks-report.json
