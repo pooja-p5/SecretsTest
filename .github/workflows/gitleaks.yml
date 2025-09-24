@@ -1,28 +1,35 @@
-name: Gitleaks Scan
+name: gitleaks
 
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]
-  workflow_dispatch:   # allows manual run
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *"
 
 jobs:
-  gitleaks:
+  scan:
+    name: gitleaks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # important! fetch full history for commit scan
+          fetch-depth: 0   # fetch full history
 
-      - name: Run Gitleaks scan (code + commit history)
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . --log-opts="--all" --report-format json --report-path gitleaks-report.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      - name: Install Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Run Gitleaks (code + commit history)
+        run: |
+          gitleaks detect \
+            --source . \
+            --log-opts="--all" \
+            --report-format json \
+            --report-path gitleaks-report.json
 
       - name: Upload JSON report as artifact
         uses: actions/upload-artifact@v4
