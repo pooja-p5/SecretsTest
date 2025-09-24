@@ -1,8 +1,8 @@
 name: gitleaks
 
 on:
-  pull_request:
   push:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: "0 4 * * *"
@@ -11,18 +11,25 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # needed for full history
+          fetch-depth: 0
 
-      - name: Run Gitleaks with JSON report
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-        with:
-          # 👇 this works in v2 — but you must use "args" under with
-          args: detect --source . --log-opts="--all" --report-format json --report-path gitleaks-report.json
+      - name: Install Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Run Gitleaks (JSON report, full history)
+        run: |
+          gitleaks detect \
+            --source . \
+            --log-opts="--all" \
+            --report-format json \
+            --report-path gitleaks-report.json
 
       - name: Upload JSON report as artifact
         uses: actions/upload-artifact@v4
