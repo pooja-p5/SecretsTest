@@ -1,0 +1,37 @@
+name: trufflehog
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # important: get full commit history
+
+      - name: Install TruffleHog
+        run: |
+          curl -sSL https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_$(uname -s)_$(uname -m).tar.gz -o trufflehog.tar.gz
+          tar -xvzf trufflehog.tar.gz
+          chmod +x trufflehog
+          sudo mv trufflehog /usr/local/bin/
+
+      - name: Run TruffleHog on code + history
+        run: |
+          trufflehog git file://. \
+            --json \
+            --since-commit=HEAD \
+            > trufflehog-report.json || true
+
+      - name: Upload JSON report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-report
+          path: trufflehog-report.json
